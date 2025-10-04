@@ -10,6 +10,29 @@ packages = [{include = "src"}]
 python = "^3.13"
 ipykernel = "^6.30.1"
 python-dotenv = "^1.1.1"
+google-cloud-aiplatform = "^1.60.0"
+google-cloud-bigquery = "^3.25.0"
+google-cloud-storage = "^2.18.0"
+pandas = "^2.2.0"
+numpy = "^2.0.0"
+scikit-learn = "^1.5.0"
+kfp = "^2.8.0"
+pydantic = "^2.8.0"
+loguru = "^0.7.0"
+matplotlib = "^3.10.6"
+seaborn = "^0.13.2"
+joblib = "^1.5.2"
+xgboost = "^3.0.5"
+coloredlogs = "^15.0.1"
+cartopy = "^0.25.0"
+earthaccess = "^0.15.1"
+netcdf4 = "^1.7.2"
+xarray = "^2025.9.1"
+pyarrow = "^21.0.0"
+pandas-gbq = "^0.29.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.2"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
