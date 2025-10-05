@@ -11,3 +11,6 @@ class Google:
             cls._instance = super().__new__(cls)
             cls._instance.bigquery = BigQueryClient()
         return cls._instance
+
+    def __init__(self):
+        self.bigquery: BigQueryClient = self._instance.bigquery
