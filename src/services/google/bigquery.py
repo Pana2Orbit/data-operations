@@ -33,11 +33,11 @@ class BigQueryClient:
                 logger.info(
                     f"Normalized GCP_PROJECT_ID from '{raw_project}' to '{proj}'"
                 )
-            self.client = bigquery.Client(project=proj, location=self.location)
+            self.client: bigquery.Client = bigquery.Client(project=proj, location=self.location)
             self.project_id = proj
         else:
             # Let the client pick up default project from ADC / gcloud config
-            self.client = bigquery.Client(location=self.location)
+            self.client: bigquery.Client = bigquery.Client(location=self.location)
             self.project_id = getattr(self.client, "project", None)
 
         logger.info(
@@ -94,9 +94,13 @@ class BigQueryClient:
                 logger.error(f"Error checking/creating dataset: {e}")
                 raise
 
+        # Append by default to avoid overwriting existing table contents.
+        # Use CREATE_IF_NEEDED to allow creating the table when it doesn't exist.
         job_config = bigquery.LoadJobConfig(
-            write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
+            write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+            create_disposition=bigquery.CreateDisposition.CREATE_IF_NEEDED,
         )
+        logger.info("BigQuery load configured to WRITE_APPEND and CREATE_IF_NEEDED")
         # Build destination; if project_id is None, let client infer it by using dataset.table
         if self.project_id:
             destination = f"{self.project_id}.{dataset}.{table_id}"

@@ -137,28 +137,29 @@ class EarthDataClient:
                     )
                     continue
 
-                for fp in file_paths:
-                    try:
-                        ds = xr.open_dataset(fp)
-                    except (OSError, ValueError, RuntimeError, TypeError):
-                        continue
+            logger.info(f"Downloaded {len(file_paths)} files. Processing...")
+            for fp in file_paths:
+                try:
+                    ds = xr.open_dataset(fp)
+                except (OSError, ValueError, RuntimeError, TypeError):
+                    continue
 
+                try:
+                    df = ds.to_dataframe().reset_index()
+                    if not df.empty:
+                        frames.append(df)
+                finally:
                     try:
-                        df = ds.to_dataframe().reset_index()
-                        if not df.empty:
-                            frames.append(df)
-                    finally:
-                        try:
-                            ds.close()
-                        except (RuntimeError, OSError):
-                            pass
-
-                    # Remove the file to avoid accumulating many files
-                    try:
-                        if os.path.exists(fp):
-                            os.remove(fp)
-                    except (OSError, PermissionError):
+                        ds.close()
+                    except (RuntimeError, OSError):
                         pass
+
+                # Remove the file to avoid accumulating many files
+                try:
+                    if os.path.exists(fp):
+                        os.remove(fp)
+                except (OSError, PermissionError):
+                    pass
 
             if frames:
                 result_df = pd.concat(frames, axis=0, ignore_index=True, copy=False)

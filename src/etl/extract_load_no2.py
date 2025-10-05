@@ -34,6 +34,7 @@ def extract_and_load_no2(
     df['time'] = pd.to_datetime(df['time']).dt.strftime('%Y-%m-%d %H:%M:%S')
     logger.info(f"Data cleaned. {len(df)} records remaining after cleaning.")
     try:
+        logger.info("Uploading data to BigQuery...")
         _ = google.bigquery.upload_data_from_dataframe(
             df=df,
             dataset="earth_data",
