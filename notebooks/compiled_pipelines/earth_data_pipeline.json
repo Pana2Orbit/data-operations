@@ -1,0 +1,269 @@
+{
+  "components": {
+    "comp-clean-data-component": {
+      "executorLabel": "exec-clean-data-component",
+      "inputDefinitions": {
+        "artifacts": {
+          "input_dataset": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "output_dataset": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        }
+      }
+    },
+    "comp-get-data-component": {
+      "executorLabel": "exec-get-data-component",
+      "inputDefinitions": {
+        "parameters": {
+          "dataset_name": {
+            "parameterType": "STRING"
+          },
+          "dataset_version": {
+            "parameterType": "STRING"
+          },
+          "end_date": {
+            "parameterType": "STRING"
+          },
+          "polygon_str": {
+            "parameterType": "STRING"
+          },
+          "start_date": {
+            "parameterType": "STRING"
+          }
+        }
+      },
+      "outputDefinitions": {
+        "artifacts": {
+          "output_dataset": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        }
+      }
+    },
+    "comp-upload-to-bq-component": {
+      "executorLabel": "exec-upload-to-bq-component",
+      "inputDefinitions": {
+        "artifacts": {
+          "input_dataset": {
+            "artifactType": {
+              "schemaTitle": "system.Dataset",
+              "schemaVersion": "0.0.1"
+            }
+          }
+        },
+        "parameters": {
+          "bq_dataset": {
+            "parameterType": "STRING"
+          },
+          "table_id": {
+            "parameterType": "STRING"
+          }
+        }
+      }
+    }
+  },
+  "deploymentSpec": {
+    "executors": {
+      "exec-clean-data-component": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "clean_data_component"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'pandas' 'pyarrow'  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.4' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef clean_data_component(\n    input_dataset: Input[Dataset], output_dataset: Output[Dataset] = None\n):\n    \"\"\"\n    Clean the data by removing NaNs and duplicates.\n    \"\"\"\n\n    df = pd.read_parquet(input_dataset.path)\n    df = df.dropna()\n    df = df.drop_duplicates()\n    df.to_parquet(output_dataset.path)\n\n"
+          ],
+          "image": "python:3.13-slim"
+        }
+      },
+      "exec-get-data-component": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "get_data_component"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'earthaccess' 'pandas' 'xarray' 'python-dotenv' 'loguru' 'coloredlogs' 'netcdf4' 'pyarrow'  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.4' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef get_data_component(\n    dataset_name: str,\n    dataset_version: str,\n    start_date: str,\n    end_date: str,\n    polygon_str: str,\n    output_dataset: Output[Dataset] = None,\n):\n    \"\"\"\n    Get data from EarthData and save it to a parquet file as a Vertex AI pipeline dataset.\n    \"\"\"\n    polygon = json.loads(polygon_str)\n    client = EarthDataClient()\n    df = client.get_data(dataset_name, dataset_version, start_date, end_date, polygon)\n    df.to_parquet(output_dataset.path)\n\n"
+          ],
+          "image": "python:3.13-slim"
+        }
+      },
+      "exec-upload-to-bq-component": {
+        "container": {
+          "args": [
+            "--executor_input",
+            "{{$}}",
+            "--function_to_execute",
+            "upload_to_bq_component"
+          ],
+          "command": [
+            "sh",
+            "-c",
+            "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip || python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'google-cloud-bigquery' 'pandas' 'pyarrow' 'python-dotenv'  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.4' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"$0\" \"$@\"\n",
+            "sh",
+            "-ec",
+            "program_path=$(mktemp -d)\n\nprintf \"%s\" \"$0\" > \"$program_path/ephemeral_component.py\"\n_KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         \"$program_path/ephemeral_component.py\"                         \"$@\"\n",
+            "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import *\n\ndef upload_to_bq_component(\n    input_dataset: Input[Dataset], bq_dataset: str, table_id: str\n):\n    \"\"\"\n    Upload the cleaned data to BigQuery.\n    \"\"\"\n    df = pd.read_parquet(input_dataset.path)\n    google = Google()\n    _ = google.bigquery.upload_data_from_dataframe(df, bq_dataset, table_id)\n\n"
+          ],
+          "image": "python:3.13-slim"
+        }
+      }
+    }
+  },
+  "pipelineInfo": {
+    "description": "Pipeline to get earth data, clean it, and upload to BigQuery",
+    "name": "earth-data-to-bq-pipeline"
+  },
+  "root": {
+    "dag": {
+      "tasks": {
+        "clean-data-component": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-clean-data-component"
+          },
+          "dependentTasks": [
+            "get-data-component"
+          ],
+          "inputs": {
+            "artifacts": {
+              "input_dataset": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "output_dataset",
+                  "producerTask": "get-data-component"
+                }
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "clean-data-component"
+          }
+        },
+        "get-data-component": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-get-data-component"
+          },
+          "inputs": {
+            "parameters": {
+              "dataset_name": {
+                "componentInputParameter": "dataset_name"
+              },
+              "dataset_version": {
+                "componentInputParameter": "dataset_version"
+              },
+              "end_date": {
+                "componentInputParameter": "end_date"
+              },
+              "polygon_str": {
+                "componentInputParameter": "polygon_str"
+              },
+              "start_date": {
+                "componentInputParameter": "start_date"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "get-data-component"
+          }
+        },
+        "upload-to-bq-component": {
+          "cachingOptions": {
+            "enableCache": true
+          },
+          "componentRef": {
+            "name": "comp-upload-to-bq-component"
+          },
+          "dependentTasks": [
+            "clean-data-component"
+          ],
+          "inputs": {
+            "artifacts": {
+              "input_dataset": {
+                "taskOutputArtifact": {
+                  "outputArtifactKey": "output_dataset",
+                  "producerTask": "clean-data-component"
+                }
+              }
+            },
+            "parameters": {
+              "bq_dataset": {
+                "componentInputParameter": "bq_dataset"
+              },
+              "table_id": {
+                "componentInputParameter": "table_id"
+              }
+            }
+          },
+          "taskInfo": {
+            "name": "upload-to-bq-component"
+          }
+        }
+      }
+    },
+    "inputDefinitions": {
+      "parameters": {
+        "bq_dataset": {
+          "parameterType": "STRING"
+        },
+        "dataset_name": {
+          "parameterType": "STRING"
+        },
+        "dataset_version": {
+          "parameterType": "STRING"
+        },
+        "end_date": {
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "polygon_str": {
+          "parameterType": "STRING"
+        },
+        "start_date": {
+          "isOptional": true,
+          "parameterType": "STRING"
+        },
+        "table_id": {
+          "parameterType": "STRING"
+        }
+      }
+    }
+  },
+  "schemaVersion": "2.1.0",
+  "sdkVersion": "kfp-2.14.4"
+}

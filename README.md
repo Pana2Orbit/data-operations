@@ -1,11 +1,18 @@
-# Data Project Template
+# Data Operations
 
-<a target="_blank" href="https://datalumina.com/">
-    <img src="https://img.shields.io/badge/Datalumina-Project%20Template-2856f7" alt="Datalumina Project" />
-</a>
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) ![GCP](https://img.shields.io/badge/Google%20Cloud-4285F4?&style=plastic&logo=Google%20Cloud&logoColor=white) ![AI](https://img.shields.io/badge/ML-Machine%20Learning-success)
 
-## Cookiecutter Data Science
-This project template is a simplified version of the [Cookiecutter Data Science](https://cookiecutter-data-science.drivendata.org) template, created to suit the needs of Datalumina and made available as a GitHub template.
+## Getting Started
+
+To set up the project environment run this commands:
+
+```bash
+make venv
+make activate
+```
+
+Note: `make activate` runs the activation command in a subshell. If it fails or you need persistent activation, run the printed command manually in your terminal.
+
 
 ## Adjusting .gitignore
 
